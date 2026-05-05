@@ -8,6 +8,7 @@ $context = context_course::instance($course->id);
 
 require_login($course);
 require_capability('enrol/manual:enrol', $context);
+local_enroldate_ensure_grade_report_history_visible();
 
 $PAGE->set_url('/local/enroldate/index.php', array('id' => $course->id));
 $PAGE->set_context($context);
@@ -49,46 +50,56 @@ if ($mform->is_cancelled()) {
     $success_count = 0;
 
     $timestart = $data->timestart;
-    $timeend = 0;
-    
-    if (!empty($data->timeend)) {
-        $timeend = $data->timeend;
-    } 
-
-    else if (!empty($data->duration)) {
-        $timeend = $timestart + $data->duration;
-    }
+    $timeend = local_enroldate_resolve_timeend($data);
 
     $status = $data->status; 
     $roleid = $data->roleid;
 
     $selectedusers = optional_param_array('selectedusers', [], PARAM_INT);
-    
-    if (!empty($selectedusers)) {
-        foreach ($selectedusers as $userid => $checked) {
-            if ($checked) {
-                // ПЕРЕДАЕМ НОВЫЕ ПАРАМЕТРЫ: $timeend и $status
-                $enrolplugin->enrol_user($manualinstance, $userid, $roleid, $timestart, $timeend, $status);
-                $success_count++;
+    $selectedids = [];
+    foreach ($selectedusers as $userid => $checked) {
+        if (!empty($checked)) {
+            $selectedids[] = (int)$userid;
+        }
+    }
+    $existingids = [];
+    foreach (array_unique($selectedids) as $userid) {
+        if ($DB->record_exists('user', ['id' => $userid, 'deleted' => 0])) {
+            $existingids[] = $userid;
+        }
+    }
+    $selecteduserids = local_enroldate_normalise_selected_users($selectedusers, $existingids);
+    $userids = [];
+    $notfound = [];
+
+    foreach ($selecteduserids as $userid) {
+        $userids[$userid] = $userid;
+    }
+
+    if (!empty($data->userlist)) {
+        foreach (local_enroldate_parse_userlist($data->userlist) as $id) {
+            $user = $DB->get_record_select('user', 'deleted = 0 AND (LOWER(email) = ? OR LOWER(username) = ?)', [core_text::strtolower(trim($id)), core_text::strtolower(trim($id))], '*', IGNORE_MULTIPLE);
+            if ($user) {
+                $userids[(int)$user->id] = (int)$user->id;
+            } else {
+                $notfound[] = $id;
             }
         }
     }
 
-    if (!empty($data->userlist)) {
-        $ids = preg_split('/[\r\n,]+/', trim($data->userlist), -1, PREG_SPLIT_NO_EMPTY);
-        foreach ($ids as $id) {
-            $user = $DB->get_record_select('user', 'deleted = 0 AND (LOWER(email) = ? OR LOWER(username) = ?)', [core_text::strtolower(trim($id)), core_text::strtolower(trim($id))], '*', IGNORE_MULTIPLE);
-            if ($user) {
-                $enrolplugin->enrol_user($manualinstance, $user->id, $roleid, $timestart, $timeend, $status);
-                $success_count++;
-            }
-        }
+    foreach ($userids as $userid) {
+        $enrolplugin->enrol_user($manualinstance, $userid, $roleid, $timestart, $timeend, $status, true);
+        $success_count++;
     }
 
     if ($success_count > 0) {
         \core\notification::success(get_string('successenrol', 'local_enroldate', $success_count));
     } else {
-        \core\notification::warning("Пользователи не выбраны для зачисления");
+        \core\notification::warning(get_string('nousersselected', 'local_enroldate'));
+    }
+
+    if (!empty($notfound)) {
+        \core\notification::warning(get_string('notfoundusers', 'local_enroldate', implode(', ', $notfound)));
     }
     
     redirect(new moodle_url('/local/enroldate/index.php', ['id' => $course->id]));

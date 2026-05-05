@@ -35,11 +35,11 @@ class enrol_form extends \moodleform {
         $mform->addElement('select', 'roleid', get_string('role', 'local_enroldate'), $roles);
 
         $statuschoices = array(
-            0 => get_string('participationactive', 'enrol'), // Эти две строки Moodle точно найдет, они глобальные
+            0 => get_string('participationactive', 'enrol'),
             1 => get_string('participationsuspended', 'enrol')
         );
         $mform->addElement('select', 'status', get_string('enrolstatus', 'local_enroldate'), $statuschoices);
-        $mform->setDefault('status', 0); // По умолчанию - Активно
+        $mform->setDefault('status', 0);
 
         $mform->addElement('date_time_selector', 'timestart', get_string('startdate', 'local_enroldate'));
         $mform->setDefault('timestart', time());
@@ -48,7 +48,7 @@ class enrol_form extends \moodleform {
         $mform->setDefault('duration', 0);
 
         $mform->addElement('date_time_selector', 'timeend', get_string('enrolenddate', 'local_enroldate'), array('optional' => true));
-        $mform->setDefault('timeend', 0); // По умолчанию отключено
+        $mform->setDefault('timeend', 0);
 
         $mform->addElement('header', 'bulk_header', get_string('bulksection', 'local_enroldate'));
         $mform->setExpanded('bulk_header', false);
@@ -59,5 +59,15 @@ class enrol_form extends \moodleform {
         $mform->setType('id', PARAM_INT);
 
         $this->add_action_buttons(true, get_string('enrolusers', 'local_enroldate'));
+    }
+
+    public function validation($data, $files) {
+        $errors = parent::validation($data, $files);
+
+        if (!empty($data['timeend']) && !empty($data['timestart']) && $data['timeend'] <= $data['timestart']) {
+            $errors['timeend'] = get_string('enroltimeendinvalid', 'enrol');
+        }
+
+        return $errors;
     }
 }

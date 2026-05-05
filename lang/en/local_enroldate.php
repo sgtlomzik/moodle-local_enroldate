@@ -19,3 +19,4 @@ $string['userlist'] = 'List of users';
 $string['successenrol'] = 'Successfully enrolled users: {$a}';
 $string['notfoundusers'] = 'Users not found: {$a}';
 $string['nomaskenrol'] = 'The "Manual enrolment" method is not enabled in this course.';
+$string['nousersselected'] = 'No users selected for enrolment.';
