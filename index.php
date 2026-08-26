@@ -1,5 +1,6 @@
 <?php
 require_once('../../config.php');
+require_once($CFG->dirroot.'/local/enroldate/lib.php');
 require_once($CFG->dirroot.'/enrol/locallib.php');
 
 $courseid = required_param('id', PARAM_INT);

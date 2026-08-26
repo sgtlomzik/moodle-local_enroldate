@@ -2,7 +2,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_enroldate';
-$plugin->version   = 2026050500;
+$plugin->version   = 2026050600;
 $plugin->requires  = 2020110900; 
 $plugin->maturity  = MATURITY_STABLE;
-$plugin->release   = '1.2';
+$plugin->release   = '1.2.1';
