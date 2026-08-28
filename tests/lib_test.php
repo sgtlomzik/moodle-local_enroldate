@@ -43,6 +43,9 @@ require_once($CFG->dirroot . '/local/enroldate/lib.php');
  */
 final class lib_test extends \advanced_testcase {
 
+    /**
+     * Resolve timeend prefers explicit end date.
+     */
     public function test_resolve_timeend_prefers_explicit_end_date(): void {
         $data = (object)[
             'timestart' => 1000,
@@ -53,6 +56,9 @@ final class lib_test extends \advanced_testcase {
         $this->assertSame(2000, local_enroldate_resolve_timeend($data));
     }
 
+    /**
+     * Resolve timeend uses duration when end date is empty.
+     */
     public function test_resolve_timeend_uses_duration_when_end_date_is_empty(): void {
         $data = (object)[
             'timestart' => 1000,
@@ -63,6 +69,9 @@ final class lib_test extends \advanced_testcase {
         $this->assertSame(1000 + DAYSECS, local_enroldate_resolve_timeend($data));
     }
 
+    /**
+     * Resolve timeend returns zero without end date or duration.
+     */
     public function test_resolve_timeend_returns_zero_without_end_date_or_duration(): void {
         $data = (object)[
             'timestart' => 1000,
@@ -73,6 +82,9 @@ final class lib_test extends \advanced_testcase {
         $this->assertSame(0, local_enroldate_resolve_timeend($data));
     }
 
+    /**
+     * Normalise selected users filters unchecked and unknown ids.
+     */
     public function test_normalise_selected_users_filters_unchecked_and_unknown_ids(): void {
         $this->assertSame(
             [3 => 3, 5 => 5],
@@ -80,6 +92,9 @@ final class lib_test extends \advanced_testcase {
         );
     }
 
+    /**
+     * Parse userlist splits commas and new lines.
+     */
     public function test_parse_userlist_splits_commas_and_new_lines(): void {
         $this->assertSame(
             ['a@example.test', 'user1', 'user2'],
@@ -87,6 +102,9 @@ final class lib_test extends \advanced_testcase {
         );
     }
 
+    /**
+     * Search users matches names and email.
+     */
     public function test_search_users_matches_names_and_email(): void {
         $this->resetAfterTest();
 
@@ -110,6 +128,9 @@ final class lib_test extends \advanced_testcase {
         $this->assertArrayHasKey($wanted->id, $byemail);
     }
 
+    /**
+     * Search users ignores empty and deleted.
+     */
     public function test_search_users_ignores_empty_and_deleted(): void {
         $this->resetAfterTest();
 
@@ -123,6 +144,9 @@ final class lib_test extends \advanced_testcase {
         $this->assertArrayNotHasKey($deleted->id, local_enroldate_search_users('Deletedperson'));
     }
 
+    /**
+     * Grade report visibility respects the plugin setting.
+     */
     public function test_grade_report_visibility_respects_the_plugin_setting(): void {
         $this->resetAfterTest();
 
