@@ -42,7 +42,6 @@ require_once($CFG->dirroot . '/local/enroldate/lib.php');
  * @covers     ::local_enroldate_ensure_grade_report_history_visible
  */
 final class lib_test extends \advanced_testcase {
-
     /**
      * Resolve timeend prefers explicit end date.
      */

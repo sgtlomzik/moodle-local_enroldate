@@ -22,8 +22,6 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Maximum number of users shown by one search.
  */
@@ -80,7 +78,7 @@ function local_enroldate_normalise_selected_users(array $selectedusers, array $a
  */
 function local_enroldate_parse_userlist(string $userlist): array {
     $tokens = preg_split('/[\r\n,]+/', trim($userlist), -1, PREG_SPLIT_NO_EMPTY);
-    return array_values(array_filter(array_map('trim', $tokens), static function($token) {
+    return array_values(array_filter(array_map('trim', $tokens), static function ($token) {
         return $token !== '';
     }));
 }

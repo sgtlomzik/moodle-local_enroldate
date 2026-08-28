@@ -38,7 +38,6 @@ require_once($CFG->dirroot . '/local/enroldate/lib.php');
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class enrol_form extends \moodleform {
-
     /**
      * Build the form.
      */
@@ -58,8 +57,12 @@ class enrol_form extends \moodleform {
         $searchresults = $customdata['searchresults'] ?? [];
 
         if (!empty($searchresults)) {
-            $mform->addElement('static', 'info', '',
-                \html_writer::tag('strong', get_string('selectfromresults', 'local_enroldate')));
+            $mform->addElement(
+                'static',
+                'info',
+                '',
+                \html_writer::tag('strong', get_string('selectfromresults', 'local_enroldate'))
+            );
 
             foreach ($searchresults as $user) {
                 $label = s(fullname($user)) . ' (' . s($user->email) . ')';
@@ -67,8 +70,12 @@ class enrol_form extends \moodleform {
             }
 
             if (count($searchresults) >= LOCAL_ENROLDATE_SEARCH_LIMIT) {
-                $mform->addElement('static', 'searchtruncated', '',
-                    get_string('searchtruncated', 'local_enroldate', LOCAL_ENROLDATE_SEARCH_LIMIT));
+                $mform->addElement(
+                    'static',
+                    'searchtruncated',
+                    '',
+                    get_string('searchtruncated', 'local_enroldate', LOCAL_ENROLDATE_SEARCH_LIMIT)
+                );
             }
         }
 
@@ -88,19 +95,31 @@ class enrol_form extends \moodleform {
         $mform->addElement('date_time_selector', 'timestart', get_string('startdate', 'local_enroldate'));
         $mform->setDefault('timestart', time());
 
-        $mform->addElement('duration', 'duration', get_string('enrolperiod', 'enrol'),
-            ['optional' => true, 'defaultunit' => DAYSECS]);
+        $mform->addElement(
+            'duration',
+            'duration',
+            get_string('enrolperiod', 'enrol'),
+            ['optional' => true, 'defaultunit' => DAYSECS]
+        );
         $mform->setDefault('duration', 0);
 
-        $mform->addElement('date_time_selector', 'timeend', get_string('enrolenddate', 'local_enroldate'),
-            ['optional' => true]);
+        $mform->addElement(
+            'date_time_selector',
+            'timeend',
+            get_string('enrolenddate', 'local_enroldate'),
+            ['optional' => true]
+        );
         $mform->setDefault('timeend', 0);
         $mform->addHelpButton('timeend', 'enrolenddate', 'local_enroldate');
 
         $mform->addElement('header', 'bulkheader', get_string('bulksection', 'local_enroldate'));
         $mform->setExpanded('bulkheader', false);
-        $mform->addElement('textarea', 'userlist', get_string('userlist', 'local_enroldate'),
-            'rows="3" cols="50"');
+        $mform->addElement(
+            'textarea',
+            'userlist',
+            get_string('userlist', 'local_enroldate'),
+            'rows="3" cols="50"'
+        );
         $mform->setType('userlist', PARAM_TEXT);
 
         $mform->addElement('hidden', 'id');
