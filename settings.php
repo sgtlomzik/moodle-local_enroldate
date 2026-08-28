@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version details for the local_enroldate plugin.
+ * Admin settings for local_enroldate.
  *
  * @package    local_enroldate
  * @copyright  2026 SgtLomzik <lomzike@gmail.com>
@@ -24,9 +24,15 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->component = 'local_enroldate';
-$plugin->version   = 2026082800;
-$plugin->requires  = 2024100700; // Moodle 4.5 (LTS).
-$plugin->supported = [405, 502];
-$plugin->maturity  = MATURITY_STABLE;
-$plugin->release   = '1.3.0';
+if ($hassiteconfig) {
+    $settings = new admin_settingpage('local_enroldate', get_string('pluginname', 'local_enroldate'));
+
+    $settings->add(new admin_setting_configcheckbox(
+        'local_enroldate/forcegradehistory',
+        get_string('forcegradehistory', 'local_enroldate'),
+        get_string('forcegradehistory_desc', 'local_enroldate'),
+        1
+    ));
+
+    $ADMIN->add('localplugins', $settings);
+}

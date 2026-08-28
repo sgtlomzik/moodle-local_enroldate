@@ -15,18 +15,32 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version details for the local_enroldate plugin.
+ * Privacy Subsystem implementation for local_enroldate.
  *
  * @package    local_enroldate
  * @copyright  2026 SgtLomzik <lomzike@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
+namespace local_enroldate\privacy;
 
-$plugin->component = 'local_enroldate';
-$plugin->version   = 2026082800;
-$plugin->requires  = 2024100700; // Moodle 4.5 (LTS).
-$plugin->supported = [405, 502];
-$plugin->maturity  = MATURITY_STABLE;
-$plugin->release   = '1.3.0';
+/**
+ * Privacy provider.
+ *
+ * The plugin is a front end for the core manual enrolment plugin: the enrolments
+ * it creates are stored, exported and deleted by core, and nothing is kept here.
+ *
+ * @package    local_enroldate
+ * @copyright  2026 SgtLomzik <lomzike@gmail.com>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class provider implements \core_privacy\local\metadata\null_provider {
+    /**
+     * Explain why this plugin stores no personal data.
+     *
+     * @return string The name of the language string describing the reason.
+     */
+    public static function get_reason(): string {
+        return 'privacy:metadata';
+    }
+}
