@@ -15,31 +15,35 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Upgrade steps for local_enroldate.
+ * Privacy Subsystem implementation for local_enroldate.
  *
  * @package    local_enroldate
  * @copyright  2026 SgtLomzik <lomzike@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+namespace local_enroldate\privacy;
+
 defined('MOODLE_INTERNAL') || die();
 
 /**
- * Upgrade the local_enroldate plugin.
+ * Privacy provider.
  *
- * @param int $oldversion The version we are upgrading from.
- * @return bool Always true.
+ * The plugin is a front end for the core manual enrolment plugin: the enrolments
+ * it creates are stored, exported and deleted by core, and nothing is kept here.
+ *
+ * @package    local_enroldate
+ * @copyright  2026 SgtLomzik <lomzike@gmail.com>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-function xmldb_local_enroldate_upgrade($oldversion) {
-    if ($oldversion < 2026082800) {
-        // Earlier releases forced the core grade_report_showonlyactiveenrol setting to 0
-        // from db/install.php and again on every page load. That is now a plugin setting
-        // which is on by default, so behaviour is unchanged, but administrators can turn
-        // it off and keep their own value for the core setting.
-        set_config('forcegradehistory', 1, 'local_enroldate');
+class provider implements \core_privacy\local\metadata\null_provider {
 
-        upgrade_plugin_savepoint(true, 2026082800, 'local', 'enroldate');
+    /**
+     * Explain why this plugin stores no personal data.
+     *
+     * @return string The name of the language string describing the reason.
+     */
+    public static function get_reason(): string {
+        return 'privacy:metadata';
     }
-
-    return true;
 }
