@@ -40,6 +40,7 @@ require_once($CFG->dirroot . '/local/enroldate/lib.php');
  * @covers     ::local_enroldate_parse_userlist
  * @covers     ::local_enroldate_search_users
  * @covers     ::local_enroldate_ensure_grade_report_history_visible
+ * @covers     ::local_enroldate_extend_navigation_course
  */
 final class lib_test extends \advanced_testcase {
     /**
@@ -157,5 +158,188 @@ final class lib_test extends \advanced_testcase {
         set_config('forcegradehistory', 1, 'local_enroldate');
         local_enroldate_ensure_grade_report_history_visible();
         $this->assertSame('0', (string)get_config('core', 'grade_report_showonlyactiveenrol'));
+    }
+
+    /**
+     * Search users caps the number of results.
+     */
+    public function test_search_users_caps_the_number_of_results(): void {
+        $this->resetAfterTest();
+
+        for ($i = 0; $i < LOCAL_ENROLDATE_SEARCH_LIMIT + 5; $i++) {
+            $this->getDataGenerator()->create_user(['lastname' => 'Cappedperson']);
+        }
+
+        $this->assertCount(LOCAL_ENROLDATE_SEARCH_LIMIT, local_enroldate_search_users('Cappedperson'));
+    }
+
+    /**
+     * Search users excludes the guest account.
+     */
+    public function test_search_users_excludes_the_guest_account(): void {
+        global $CFG, $DB;
+
+        $this->resetAfterTest();
+
+        $guest = $DB->get_record('user', ['id' => $CFG->siteguest], '*', MUST_EXIST);
+
+        $this->assertArrayNotHasKey($guest->id, local_enroldate_search_users($guest->lastname));
+        $this->assertArrayNotHasKey($guest->id, local_enroldate_search_users($guest->email));
+    }
+
+    /**
+     * Search users matches without regard to case.
+     */
+    public function test_search_users_matches_without_regard_to_case(): void {
+        $this->resetAfterTest();
+
+        $user = $this->getDataGenerator()->create_user([
+            'firstname' => 'Ekaterina',
+            'lastname' => 'Mixedcase',
+            'email' => 'Ekaterina.Mixedcase@example.test',
+        ]);
+
+        $this->assertArrayHasKey($user->id, local_enroldate_search_users('MIXEDCASE'));
+        $this->assertArrayHasKey($user->id, local_enroldate_search_users('ekaterina.mixedcase@'));
+    }
+
+    /**
+     * Search users escapes wildcards in the search term.
+     */
+    public function test_search_users_escapes_wildcards(): void {
+        $this->resetAfterTest();
+
+        $this->getDataGenerator()->create_user(['lastname' => 'Wildcardtarget']);
+
+        // A bare % must be matched literally rather than matching every user.
+        $this->assertSame([], local_enroldate_search_users('%'));
+    }
+
+    /**
+     * Normalise selected users returns nothing without a search result set.
+     */
+    public function test_normalise_selected_users_without_allowed_ids(): void {
+        $this->assertSame([], local_enroldate_normalise_selected_users([3 => 1, 5 => 1], []));
+    }
+
+    /**
+     * Normalise selected users accepts ids submitted as strings.
+     */
+    public function test_normalise_selected_users_accepts_string_ids(): void {
+        $this->assertSame(
+            [7 => 7],
+            local_enroldate_normalise_selected_users(['7' => '1'], ['7'])
+        );
+    }
+
+    /**
+     * Parse userlist returns nothing for an empty value.
+     *
+     * @param string $userlist Raw textarea value.
+     * @dataProvider empty_userlist_provider
+     */
+    public function test_parse_userlist_returns_nothing_for_empty_input(string $userlist): void {
+        $this->assertSame([], local_enroldate_parse_userlist($userlist));
+    }
+
+    /**
+     * Data provider for {@see test_parse_userlist_returns_nothing_for_empty_input()}.
+     *
+     * @return array[] Textarea values that hold no identifiers.
+     */
+    public static function empty_userlist_provider(): array {
+        return [
+            'empty string' => [''],
+            'whitespace only' => ["  \n\t "],
+            'separators only' => [",,\n,\r\n,"],
+        ];
+    }
+
+    /**
+     * Grade report visibility leaves an already visible setting alone.
+     */
+    public function test_grade_report_visibility_leaves_the_setting_alone_when_already_set(): void {
+        $this->resetAfterTest();
+
+        set_config('forcegradehistory', 1, 'local_enroldate');
+        set_config('grade_report_showonlyactiveenrol', 0);
+
+        local_enroldate_ensure_grade_report_history_visible();
+
+        $this->assertSame('0', (string)get_config('core', 'grade_report_showonlyactiveenrol'));
+    }
+
+    /**
+     * Navigation adds the plugin page for a user who may enrol.
+     */
+    public function test_extend_navigation_course_adds_the_node_for_an_enroller(): void {
+        $this->resetAfterTest();
+
+        $course = $this->getDataGenerator()->create_course();
+        $context = \context_course::instance($course->id);
+
+        $teacher = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($teacher->id, $course->id, 'editingteacher');
+        $this->setUser($teacher);
+
+        $navigation = new \navigation_node(['text' => 'Course', 'type' => \navigation_node::TYPE_COURSE]);
+        $navigation->add(
+            'Users',
+            null,
+            \navigation_node::TYPE_CONTAINER,
+            null,
+            'users'
+        );
+
+        local_enroldate_extend_navigation_course($navigation, $course, $context);
+
+        $node = $navigation->find('local_enroldate', \navigation_node::TYPE_SETTING);
+        $this->assertNotFalse($node);
+        $this->assertSame(get_string('pluginname', 'local_enroldate'), (string)$node->text);
+        $this->assertSame(
+            (new \moodle_url('/local/enroldate/index.php', ['id' => $course->id]))->out(),
+            $node->action()->out()
+        );
+
+        // It belongs under the participants section rather than at the top level.
+        $usersnode = $navigation->find('users', \navigation_node::TYPE_CONTAINER);
+        $this->assertNotFalse($usersnode->find('local_enroldate', \navigation_node::TYPE_SETTING));
+    }
+
+    /**
+     * Navigation falls back to the root when there is no users section.
+     */
+    public function test_extend_navigation_course_falls_back_to_the_root(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        $course = $this->getDataGenerator()->create_course();
+        $context = \context_course::instance($course->id);
+
+        $navigation = new \navigation_node(['text' => 'Course', 'type' => \navigation_node::TYPE_COURSE]);
+
+        local_enroldate_extend_navigation_course($navigation, $course, $context);
+
+        $this->assertNotFalse($navigation->find('local_enroldate', \navigation_node::TYPE_SETTING));
+    }
+
+    /**
+     * Navigation hides the plugin page from users who may not enrol.
+     */
+    public function test_extend_navigation_course_hides_the_node_from_students(): void {
+        $this->resetAfterTest();
+
+        $course = $this->getDataGenerator()->create_course();
+        $context = \context_course::instance($course->id);
+
+        $student = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($student->id, $course->id, 'student');
+        $this->setUser($student);
+
+        $navigation = new \navigation_node(['text' => 'Course', 'type' => \navigation_node::TYPE_COURSE]);
+
+        local_enroldate_extend_navigation_course($navigation, $course, $context);
+
+        $this->assertFalse($navigation->find('local_enroldate', \navigation_node::TYPE_SETTING));
     }
 }

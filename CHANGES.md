@@ -2,6 +2,20 @@
 
 All notable changes to this plugin are documented in this file.
 
+## [1.3.1] - 2026-08-31
+
+### Added
+- Privacy provider tests confirming the plugin is a compliant null provider and
+  that the reason it gives names a language string that exists.
+- Tests for `enrol_form`: the enrolment period validation, the fields `index.php`
+  reads back, a checkbox per search result, and the truncation notice.
+- Tests for `local_enroldate_extend_navigation_course`, covering placement under
+  the participants section, the fallback to the navigation root, and the fact
+  that the page stays hidden from users who may not enrol.
+- Further `lib.php` tests: the search result cap, the excluded guest account,
+  case-insensitive matching, wildcard escaping in the search term, and the
+  values the pasted user list treats as empty.
+
 ## [1.3.0] - 2026-08-28
 
 ### Added
